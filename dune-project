@@ -17,5 +17,3 @@
   (dune (>= 3.0))
   (alcotest (and :with-test (>= 1.6.0)))
   (bisect_ppx (and :with-test (>= 2.6)))))
-
-(instrumentation (backend bisect_ppx))
