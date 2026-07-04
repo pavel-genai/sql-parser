@@ -16,7 +16,7 @@ jobs:
       - run: opam exec -- dune runtest
         env:
           BISECT_ENABLE: yes
-      - run: opam exec -- bisect-ppx-report cobertura --output coverage.xml
+      - run: opam exec -- bisect-ppx-report cobertura coverage.xml
       - uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
