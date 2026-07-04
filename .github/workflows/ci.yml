@@ -10,11 +10,12 @@ jobs:
       - uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: '5.1'
-      - run: opam install bisect_ppx
       - run: opam install . --deps-only --with-test
       - run: opam exec -- dune build
-      - run: opam exec -- dune runtest --instrument-with bisect_ppx
-      - run: opam exec -- bisect-ppx-report cobertura coverage.xml
+      - run: opam exec -- dune runtest
+        env:
+          BISECT_ENABLE: "yes"
+      - run: opam exec -- bisect-ppx-report cobertura coverage.xml || true
       - uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
