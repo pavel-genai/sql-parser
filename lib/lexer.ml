@@ -148,7 +148,7 @@ let read_ident st =
   | "EXISTS" -> EXISTS
   | _ -> IDENT word
 
-let next_token st =
+let rec next_token st =
   skip_whitespace st;
   match peek st with
   | None -> EOF
