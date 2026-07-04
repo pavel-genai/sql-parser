@@ -1,0 +1,4 @@
+(library
+ (name sql_parser)
+ (public_name sql_parser)
+ (libraries unix))

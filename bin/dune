@@ -1,0 +1,4 @@
+(executable
+ (name main)
+ (public_name sql_parser)
+ (libraries sql_parser))

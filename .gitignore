@@ -1,0 +1,9 @@
+_build/
+*.byte
+*.native
+*.install
+*.merlin
+.merlin
+_opam/
+*.csv
+!test/fixtures/*.csv
