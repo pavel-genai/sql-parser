@@ -1,5 +1,7 @@
 # sql-parser
 
+[![CI](https://github.com/pavel-genai/sql-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/pavel-genai/sql-parser/actions/workflows/ci.yml)
+
 An OCaml SQL parser and query executor with CSV-backed storage.
 
 ## Features
