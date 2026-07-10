@@ -1,4 +1,6 @@
 (library
  (name sql_parser)
  (public_name sql_parser)
- (libraries unix))
+ (libraries unix)
+ (instrumentation
+  (backend bisect_ppx)))
