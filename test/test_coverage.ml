@@ -329,8 +329,8 @@ let test_exec_unknown_func () =
   Alcotest.(check bool) "unknown func" true raised
 
 let test_exec_compare_mixed () =
-  let _ = Executor.compare_values Ast.VNull Ast.VInt 1 in
-  let _ = Executor.compare_values Ast.VInt 1 Ast.VNull in
+  let _ = Executor.compare_values Ast.VNull (Ast.VInt 1) in
+  let _ = Executor.compare_values (Ast.VInt 1) Ast.VNull in
   let _ = Executor.compare_values (Ast.VString "a") (Ast.VBool true) in
   ()
 
