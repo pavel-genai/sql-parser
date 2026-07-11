@@ -5,8 +5,6 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      BISECT_ENABLE: "yes"
     steps:
       - uses: actions/checkout@v4
       - uses: ocaml/setup-ocaml@v3
@@ -15,11 +13,9 @@ jobs:
       - run: opam install . --deps-only --with-test
       - run: opam exec -- dune clean
       - run: opam exec -- dune build @install
-      - run: opam exec -- dune runtest --force
+      - run: opam exec -- dune runtest --instrument-with bisect_ppx --force
       - name: Generate coverage report
-        run: |
-          find _build -name "*.coverage" -type f | head -5
-          opam exec -- bisect-ppx-report cobertura --coverage-path _build coverage.xml
+        run: opam exec -- bisect-ppx-report cobertura coverage.xml
       - uses: codecov/codecov-action@v4
         with:
           files: coverage.xml
