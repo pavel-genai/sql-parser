@@ -1,7 +1,7 @@
-# sql-parser
+# parseql
 
-[![CI](https://github.com/ai-pavel/sql-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-pavel/sql-parser/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/ai-pavel/sql-parser/branch/main/graph/badge.svg)](https://codecov.io/gh/ai-pavel/sql-parser)
+[![CI](https://github.com/ai-pavel/parseql/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-pavel/parseql/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ai-pavel/parseql/branch/main/graph/badge.svg)](https://codecov.io/gh/ai-pavel/parseql)
 
 An OCaml SQL parser and query executor with CSV-backed storage.
 

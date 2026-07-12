@@ -8,8 +8,8 @@ description:
 maintainer: "Pavel"
 authors: "Pavel"
 license: "MIT"
-homepage: "https://github.com/pavel-genai/sql-parser"
-bug-reports: "https://github.com/pavel-genai/sql-parser/issues"
+homepage: "https://github.com/ai-pavel/parseql"
+bug-reports: "https://github.com/ai-pavel/parseql/issues"
 depends: [
   "ocaml" {>= "4.14"}
   "dune" {>= "3.0"}
@@ -30,4 +30,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/pavel-genai/sql-parser.git"
+dev-repo: "git+https://github.com/ai-pavel/parseql.git"
