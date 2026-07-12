@@ -126,7 +126,7 @@ let send_response fd status body =
 
 let route meth path body =
   match meth, path with
-  | "GET", "/health" -> (200, {|{"status":"ok","service":"sql-parser"}|})
+  | "GET", "/health" -> (200, {|{"status":"ok","service":"parseql"}|})
   | _, "/health" -> (405, json_error "method not allowed; use GET")
   | "POST", "/query" ->
     let sql = String.trim body in
