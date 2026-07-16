@@ -631,6 +631,121 @@ let test_string_of_data_type () =
   Alcotest.(check string) "string" "STRING" (Ast.string_of_data_type Ast.TString);
   Alcotest.(check string) "bool" "BOOL" (Ast.string_of_data_type Ast.TBool)
 
+(* ===== Additional lexer escape tests ===== *)
+
+let test_lexer_string_tab_escape () =
+  let tokens = Lexer.tokenize "'a\\tb'" in
+  (match List.hd tokens with
+   | Lexer.STRING_LIT s -> Alcotest.(check string) "tab" "a\tb" s
+   | _ -> Alcotest.fail "expected string lit")
+
+let test_lexer_string_backslash_escape () =
+  let tokens = Lexer.tokenize "'a\\\\b'" in
+  (match List.hd tokens with
+   | Lexer.STRING_LIT s -> Alcotest.(check string) "backslash" "a\\b" s
+   | _ -> Alcotest.fail "expected string lit")
+
+let test_lexer_string_quote_escape () =
+  let tokens = Lexer.tokenize "'it\\'s'" in
+  (match List.hd tokens with
+   | Lexer.STRING_LIT s -> Alcotest.(check string) "quote" "it's" s
+   | _ -> Alcotest.fail "expected string lit")
+
+(* ===== Additional executor tests ===== *)
+
+let test_exec_compare_float_int () =
+  let _ = Executor.compare_values (Ast.VInt 1) (Ast.VFloat 1.0) in
+  let _ = Executor.compare_values (Ast.VFloat 1.0) (Ast.VInt 1) in
+  let _ = Executor.compare_values (Ast.VInt 1) (Ast.VInt 2) in
+  let _ = Executor.compare_values (Ast.VString "a") (Ast.VString "b") in
+  let _ = Executor.compare_values (Ast.VBool true) (Ast.VBool false) in
+  let _ = Executor.compare_values Ast.VNull Ast.VNull in
+  ()
+
+let test_exec_project_table_star () =
+  let db = Storage.create_database (Filename.concat (Filename.get_temp_dir_name ()) "sql_cov_pts") in
+  let exec sql =
+    let stmt = Parser.parse sql in
+    let plan = Planner.plan_statement stmt in
+    Executor.execute db plan
+  in
+  let _ = exec "CREATE TABLE t (a INT, b STRING)" in
+  let _ = exec "INSERT INTO t VALUES (1, 'x')" in
+  let r = exec "SELECT t.* FROM t" in
+  Alcotest.(check int) "one row" 1 (List.length r.rows)
+
+let test_exec_or_null () =
+  let v = Executor.eval_binop Ast.Or (Ast.VNull) (Ast.VBool false) in
+  Alcotest.(check bool) "null" true (v = Ast.VNull)
+
+let test_exec_and_null_right () =
+  let v = Executor.eval_binop Ast.And (Ast.VBool false) (Ast.VNull) in
+  Alcotest.(check bool) "false" true (v = Ast.VBool false)
+
+(* ===== Additional storage tests ===== *)
+
+let test_storage_load_schema_unknown_type () =
+  let dir = Filename.concat (Filename.get_temp_dir_name ()) "sql_cov_sut" in
+  (try Unix.mkdir dir 0o755 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
+  let db = Storage.create_database dir in
+  let exec sql =
+    let stmt = Parser.parse sql in
+    let plan = Planner.plan_statement stmt in
+    Executor.execute db plan
+  in
+  let _ = exec "CREATE TABLE t (id INT, val STRING)" in
+  let _ = exec "INSERT INTO t VALUES (1, 'hello')" in
+  (* Manually write a schema with unknown type to test fallback *)
+  let sch = Filename.concat dir "t2.schema" in
+  let oc = open_out sch in
+  Printf.fprintf oc "id,UNKNOWN_TYPE,NOT NULL\n";
+  close_out oc;
+  let csv = Filename.concat dir "t2.csv" in
+  let oc = open_out csv in
+  Printf.fprintf oc "id\n42\n";
+  close_out oc;
+  let db2 = Storage.create_database dir in
+  let r =
+    let stmt = Parser.parse "SELECT * FROM t2" in
+    let plan = Planner.plan_statement stmt in
+    Executor.execute db2 plan
+  in
+  Alcotest.(check int) "loaded unknown type" 1 (List.length r.rows)
+
+let test_storage_get_schema () =
+  let dir = Filename.concat (Filename.get_temp_dir_name ()) "sql_cov_gs" in
+  (try Unix.mkdir dir 0o755 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
+  let db = Storage.create_database dir in
+  let exec sql =
+    let stmt = Parser.parse sql in
+    let plan = Planner.plan_statement stmt in
+    Executor.execute db plan
+  in
+  let _ = exec "CREATE TABLE t (id INT)" in
+  let schema = Storage.get_schema db in
+  Alcotest.(check int) "one table" 1 (List.length schema)
+
+(* ===== Additional types tests ===== *)
+
+let test_type_check_qualified_column_ok () =
+  let schema = [
+    { Types.schema_table = "users";
+      schema_columns = [
+        { Ast.col_name = "id"; col_type = Ast.TInt; nullable = false };
+        { Ast.col_name = "name"; col_type = Ast.TString; nullable = true };
+      ] }
+  ] in
+  let stmt = Parser.parse "SELECT users.id FROM users" in
+  Types.check_statement schema stmt
+
+let test_type_check_order_by () =
+  let schema = [
+    { Types.schema_table = "t";
+      schema_columns = [{ Ast.col_name = "id"; col_type = Ast.TInt; nullable = true }] };
+  ] in
+  let stmt = Parser.parse "SELECT * FROM t ORDER BY id" in
+  Types.check_statement schema stmt
+
 (* ===== Test Runner ===== *)
 
 let lexer_tests = [
@@ -644,6 +759,9 @@ let lexer_tests = [
   "unexpected char", `Quick, test_lexer_unexpected_char;
   "ident", `Quick, test_lexer_ident;
   "string_of_token", `Quick, test_string_of_token;
+  "tab escape", `Quick, test_lexer_string_tab_escape;
+  "backslash escape", `Quick, test_lexer_string_backslash_escape;
+  "quote escape", `Quick, test_lexer_string_quote_escape;
 ]
 
 let parser_tests = [
@@ -696,6 +814,10 @@ let executor_tests = [
   "format empty", `Quick, test_exec_format_empty;
   "left join", `Quick, test_exec_left_join;
   "right join", `Quick, test_exec_right_join;
+  "compare float int", `Quick, test_exec_compare_float_int;
+  "project table star", `Quick, test_exec_project_table_star;
+  "or null", `Quick, test_exec_or_null;
+  "and null right", `Quick, test_exec_and_null_right;
 ]
 
 let storage_tests = [
@@ -707,6 +829,8 @@ let storage_tests = [
   "drop if not exists", `Quick, test_storage_drop_if_not_exists;
   "get table not found", `Quick, test_storage_get_table_not_found;
   "insert with columns", `Quick, test_storage_insert_with_columns;
+  "load schema unknown type", `Quick, test_storage_load_schema_unknown_type;
+  "get schema", `Quick, test_storage_get_schema;
 ]
 
 let type_tests = [
@@ -717,6 +841,8 @@ let type_tests = [
   "join cond", `Quick, test_type_check_join_cond;
   "select no from", `Quick, test_type_check_select_no_from;
   "drop", `Quick, test_type_check_drop;
+  "qualified column ok", `Quick, test_type_check_qualified_column_ok;
+  "order by", `Quick, test_type_check_order_by;
 ]
 
 let planner_tests = [
